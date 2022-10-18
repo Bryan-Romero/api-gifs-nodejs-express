@@ -1,3 +1,5 @@
+const config = require('./config/setings');
+const {MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB } = config
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -19,13 +21,19 @@ app.use(express.json());
 
 //middleware
 app.use(morgan('dev')); //mensaje en consola tipoDePeticion Ruta Respuesta Tiempo - Peso
-app.use(myConnection(mysql, {
-    host: 'localhost',
-    user: 'root',
-    password: '12345',
-    port: 3306,
-    database: 'app_gifs'
-}, 'single'));
+try{
+    app.use(myConnection(mysql, {
+        host: MYSQL_URI,
+        user: MYSQL_USER,
+        password: MYSQL_PASSWORD,
+        port: 3306,
+        database: MYSQL_DB
+    }, 'single'));
+    console.log(`DB is connected`);
+} catch(e){
+    console.log(e);
+}
+
 app.use(express.urlencoded({ extended: false }));
 
 
