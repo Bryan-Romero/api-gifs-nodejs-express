@@ -39,6 +39,7 @@ app.use(express.urlencoded({ extended: false }));
 
 //routes
 app.use('/', usersRoutes);
+app.get('/', (req, res) => res.send('Hello Word'))
 
 //static files
 app.use(express.static(path.join(__dirname, 'public')));
