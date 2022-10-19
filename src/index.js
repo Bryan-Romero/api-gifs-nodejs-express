@@ -7,8 +7,6 @@ const morgan = require('morgan');
 const mysql = require('mysql');
 const myConnection = require('express-myconnection');
 const cors = require('cors');
-const PORT = 4000
-
 
 
 //importing routes
