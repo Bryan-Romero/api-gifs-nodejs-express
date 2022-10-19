@@ -45,3 +45,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.listen(PORT, () => {
     console.log(`Server on port ${PORT}`);
 })
+
+
+
+app.use((req, res) => {
+    res.send('Hello Word!')
+});
