@@ -13,7 +13,7 @@ const cors = require('cors');
 const usersRoutes = require('./routes/users');
 
 //setings
-app.set('port', process.env.PORT || 3000) //revisar si hay un purto y si no usar el 3000
+const PORT = process.env.PORT || 3000 //revisar si hay un purto y si no usar el 3000
 app.use(cors());
 app.use(express.json());
 
