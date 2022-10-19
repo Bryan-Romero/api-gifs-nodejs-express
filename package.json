@@ -8,6 +8,9 @@
     "dev": "nodemon src/index.js",
     "start": "ndoe src/index.js"
   },
+  "engines":{
+    "node": "16.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
