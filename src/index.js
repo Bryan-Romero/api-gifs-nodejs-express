@@ -45,6 +45,6 @@ app.use("/", usersRoutes);
 app.use(express.static(path.join(__dirname, "public")));
 
 //starting the server
-app.listen(PORT, () => {
-  console.log(`Server on port ${PORT}`);
+app.listen(4000, () => {
+  console.log(`Server on port ${4000}`);
 });
