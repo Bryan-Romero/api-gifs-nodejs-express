@@ -1,5 +1,5 @@
 const config = require("./config/setings");
-const { MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, P } = config;
+const { MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, PORT } = config;
 const express = require("express");
 const app = express();
 const path = require("path");
@@ -12,7 +12,6 @@ const cors = require("cors");
 const usersRoutes = require("./routes/users");
 
 //setings
-const PORT = process.env.PORT;
 app.use(cors());
 app.use(express.json());
 
