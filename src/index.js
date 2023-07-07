@@ -1,5 +1,5 @@
 const config = require("./config/setings");
-const { MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, PORT } = config;
+const { MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB } = config;
 const express = require("express");
 const app = express();
 const path = require("path");
@@ -12,6 +12,7 @@ const cors = require("cors");
 const usersRoutes = require("./routes/users");
 
 //setings
+const PORT = process.env.PORT || 3000; //revisar si hay un purto y si no usar el 3000
 app.use(cors());
 app.use(express.json());
 
@@ -25,11 +26,8 @@ try {
         host: MYSQL_URI,
         user: MYSQL_USER,
         password: MYSQL_PASSWORD,
-        port: PORT,
+        port: 6380,
         database: MYSQL_DB,
-        ssl: {
-          rejectUnauthorized: false,
-        },
       },
       "single"
     )
@@ -48,6 +46,6 @@ app.use("/", usersRoutes);
 app.use(express.static(path.join(__dirname, "public")));
 
 //starting the server
-app.listen(4000, () => {
-  console.log(`Server on port ${4000}`);
+app.listen(PORT, () => {
+  console.log(`Server on port ${PORT}`);
 });
