@@ -27,7 +27,9 @@ try {
         password: MYSQL_PASSWORD,
         port: PORT,
         database: MYSQL_DB,
-        ssl: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
       },
       "single"
     )
