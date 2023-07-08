@@ -1,5 +1,10 @@
-const config = require("./config/setings");
-const { MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, PORT } = config;
+const {
+  MYSQL_DB,
+  MYSQL_PASSWORD,
+  MYSQL_URI,
+  MYSQL_USER,
+  PORT,
+} = require("./config/setings");
 const express = require("express");
 const app = express();
 const path = require("path");
