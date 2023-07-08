@@ -1,10 +1,10 @@
 const config = require("./config/setings");
-const { MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, P } = config;
+const { MYSQL_URI, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, PORT } = config;
 const express = require("express");
 const app = express();
 const path = require("path");
 const morgan = require("morgan");
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const myConnection = require("express-myconnection");
 const cors = require("cors");
 
@@ -12,7 +12,7 @@ const cors = require("cors");
 const usersRoutes = require("./routes/users");
 
 //setings
-const PORT = process.env.PORT;
+const PORT_SERVER = 4000 || 3000; //revisar si hay un purto y si no usar el 3000
 app.use(cors());
 app.use(express.json());
 
@@ -20,17 +20,13 @@ app.use(express.json());
 app.use(morgan("dev")); //mensaje en consola tipoDePeticion Ruta Respuesta Tiempo - Peso
 try {
   app.use(
-    myConnection(
-      mysql,
-      {
-        host: MYSQL_URI,
-        user: MYSQL_USER,
-        password: MYSQL_PASSWORD,
-        port: PORT,
-        database: MYSQL_DB,
-      },
-      "single"
-    )
+    myConnection(mysql, {
+      host: MYSQL_URI,
+      user: MYSQL_USER,
+      password: MYSQL_PASSWORD,
+      port: PORT,
+      database: MYSQL_DB,
+    })
   );
   console.log(`DB is connected`);
 } catch (e) {
@@ -46,6 +42,6 @@ app.use("/", usersRoutes);
 app.use(express.static(path.join(__dirname, "public")));
 
 //starting the server
-app.listen(PORT, () => {
-  console.log(`Server on port ${PORT}`);
+app.listen(PORT_SERVER, () => {
+  console.log(`Server on port ${PORT_SERVER}`);
 });
