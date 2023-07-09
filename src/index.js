@@ -31,6 +31,7 @@ try {
       password: MYSQL_PASSWORD,
       port: PORT,
       database: MYSQL_DB,
+      connectTimeout: 60000,
     })
   );
   console.log(`DB is connected`);
