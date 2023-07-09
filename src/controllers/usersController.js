@@ -2,189 +2,207 @@ const jwt = require("jsonwebtoken");
 const controller = {};
 
 /**
- * funcion enecragada de insertar en la tbl users recibiendo la data del form y mandar jwt
+ * función encargada de insertar en la tabla users recibiendo la data del formulario y mandar jwt
  */
-controller.signUpUser = ((req, res) => {
-    const {name, lastName, email, password} = req.body //datos del formulario
-    console.log(`${name}, ${lastName}, ${email}, ${password}`);
-    
-    if(name.split(' ').join('') === '' || lastName.split(' ').join('') === '' || email.split(' ').join('') === '' || password.split(' ').join('') === '') return res.status(400).json({ message: 'Invalid data' })
+controller.signUpUser = async (req, res) => {
+  const { name, lastName, email, password } = req.body; //datos del formulario
+  console.log(`${name}, ${lastName}, ${email}, ${password}`);
 
-    //check email availability
-    req.getConnection((err, conn) => {
-        if (err) return res.json(err)
-        conn.query('SELECT email FROM users where email = ?', [email], (err, users) => {
-            if (err) return res.json(err)
-            const userFound = users.length
-            if(userFound > 0) return res.status(400).json({ message: 'User already exists' })
+  if (
+    name.split(" ").join("") === "" ||
+    lastName.split(" ").join("") === "" ||
+    email.split(" ").join("") === "" ||
+    password.split(" ").join("") === ""
+  )
+    return res.status(400).json({ message: "Invalid data" });
 
-            //insert user
-            req.getConnection((err, conn) => {
-                if (err) return res.json(err)
-                conn.query('INSERT INTO users (name, lastName, email, password) VALUES (?, ?, ?, ?)', [name, lastName, email, password], (err, user) => {
-                    if (err) return res.json(err)
-                    
-                    //send data user  
-                    return res.status(200).json({
-                        message: 'Registered user'
-                    })
-                })
-            })    
-        })
-    })
-})
+  try {
+    const db = req.db;
+    const users = await db.select("email").from("users").where("email", email);
+
+    const userFound = users.length;
+    if (userFound > 0)
+      return res.status(400).json({ message: "User already exists" });
+
+    const user = await db("users").insert({
+      name,
+      lastName,
+      email,
+      password,
+    });
+
+    return res.status(200).json({
+      message: "Registered user",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 /**
- * funcion enecragada de validar users recibiendo la data del form y mandar jwt
+ * función encargada de validar users recibiendo la data del formulario y mandar jwt
  */
- controller.signInUser = ((req, res) => {
-    const {email, password} = req.body //datos del formulario
-    
-    //check email exist
-    req.getConnection((err, conn) => {
-        if (err) return res.json(err)
-        conn.query('SELECT email FROM users where email = ?', [email], (err, users) => {
-            if (err) return res.json(err)
-            const userFound = users.length
-            
-            if(userFound === 0){ 
-                return res.status(400).json({ message: 'Error in email or password' })
-            } else{
+controller.signInUser = async (req, res) => {
+  const { email, password } = req.body; //datos del formulario
 
-                //validate password
-                req.getConnection((err, conn) => {
-                    if (err) return res.json(err)
-                    conn.query('SELECT password FROM users where email = ?', [email], (err, userP) => {
-                        if (err) return res.json(err)
-                        else if(password !== userP[0].password) return res.status(400).json({ message: 'Error in email or password' })
-                        
-                        //get user data to send
-                        req.getConnection((err, conn) => {
-                            if (err) return res.json(err)
-                            conn.query('SELECT idUser, name, lastName FROM users where email = ?', [email], (err, user) => {
-                                if (err) return res.json(err)
+  try {
+    const db = req.db;
+    const users = await db.select("email").from("users").where("email", email);
 
-                                //send data user 
-                                jwt.sign({user}, 'secretkey', {expiresIn: '1h'}, (err, token) => {
-                                    if (err) return res.json(err)
-                                    return res.status(200).json({
-                                        token
-                                    })
-                                })
-                            })
-                        })
-                    })
-                })
-            }        
-        })
-    })
-})
+    const userFound = users.length;
+
+    if (userFound === 0) {
+      return res.status(400).json({ message: "Error in email or password" });
+    }
+
+    const userP = await db
+      .select("password")
+      .from("users")
+      .where("email", email);
+
+    if (password !== userP[0].password)
+      return res.status(400).json({ message: "Error in email or password" });
+
+    const user = await db
+      .select("idUser", "name", "lastName")
+      .from("users")
+      .where("email", email);
+
+    jwt.sign({ user }, "secretkey", { expiresIn: "1h" }, (err, token) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      return res.status(200).json({
+        token,
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 /**
- * funcion enecragada de agregar un fav gif a usuario
+ * función encargada de agregar un fav gif a usuario
  */
-controller.addFavGif = ((req , res) => {
-    jwt.verify(req.token, 'secretkey', (error, authData) => {
-        if(error){
-            return res.sendStatus(403);
-        }else{
-            const {idGif} = req.body
-            const {idUser} = authData.user[0]
+controller.addFavGif = async (req, res) => {
+  jwt.verify(req.token, "secretkey", async (error, authData) => {
+    if (error) {
+      return res.sendStatus(403);
+    } else {
+      const { idGif } = req.body;
+      const { idUser } = authData.user[0];
 
-            foundIsFav(req, idGif, idUser).then(resolve => {
-                if(resolve > 0) return res.sendStatus(200)
-                
-                req.getConnection((err, conn) => {
-                    if (err) return res.json(err)
-                    conn.query('INSERT INTO favorites (FK_idUser, idGif) VALUES (?, ?)', [idUser, idGif], (err, rows) => {
-                        if (err) return res.json(err)
-    
-                        req.getConnection((err, conn) => {
-                            if (err) return res.json(err)
-                            conn.query('SELECT idGif FROM favorites where FK_idUser = ?', [idUser], (err, rows) => {
-                                if (err) return res.json(err)
-    
-                                return res.status(200).json({
-                                    data: rows
-                                })
-                            })
-                        })
-                    })
-                })
-            })
-        }
-    })
-})
+      try {
+        const db = req.db;
+
+        const resolve = await foundIsFav(db, idGif, idUser);
+
+        if (resolve > 0) return res.sendStatus(200);
+
+        await db("favorites").insert({
+          FK_idUser: idUser,
+          idGif,
+        });
+
+        const rows = await db
+          .select("idGif")
+          .from("favorites")
+          .where("FK_idUser", idUser);
+
+        return res.status(200).json({
+          data: rows,
+        });
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+    }
+  });
+};
 
 /**
- * funcion enecragada de eliminar un fav gif a usuario
+ * función encargada de eliminar un fav gif a usuario
  */
- controller.deleteFavGif = ((req , res) => {
-    console.log('try deleteFavGif');
-    
-    jwt.verify(req.token, 'secretkey', (error, authData) => {
-        if(error){
-            return res.sendStatus(403);
-        }else{
-            const {idGif} = req.body
-            const {idUser} = authData.user[0]
-            
-            req.getConnection((err, conn) => {
-                if (err) return res.json(err)
-                conn.query('DELETE FROM favorites WHERE (FK_idUser = ? and idGif = ?)', [idUser, idGif], (err, rows) => {
-                    if (err) return res.json(err)
-                    
-                    req.getConnection((err, conn) => {
-                        if (err) return res.json(err)
-                        conn.query('SELECT idGif FROM favorites where FK_idUser = ?', [idUser], (err, rows) => {
-                            if (err) return res.json(err)
+controller.deleteFavGif = async (req, res) => {
+  console.log("try deleteFavGif");
 
-                            return res.status(200).json({
-                                data: rows
-                            })
-                        })
-                    })
-                })
-            })
-        }
-    })
-})
+  jwt.verify(req.token, "secretkey", async (error, authData) => {
+    if (error) {
+      return res.sendStatus(403);
+    } else {
+      const { idGif } = req.body;
+      const { idUser } = authData.user[0];
+
+      try {
+        const db = req.db;
+
+        await db("favorites")
+          .where("FK_idUser", idUser)
+          .where("idGif", idGif)
+          .delete();
+
+        const rows = await db
+          .select("idGif")
+          .from("favorites")
+          .where("FK_idUser", idUser);
+
+        return res.status(200).json({
+          data: rows,
+        });
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+    }
+  });
+};
 
 /**
- * funcion enecragada mandar los favs gifs de un usuario
+ * función encargada de mandar los favs gifs de un usuario
  */
-controller.getFavGifs = ((req , res) => {
-    jwt.verify(req.token, 'secretkey', (error, authData) => {
-        if(error){
-            return res.sendStatus(403);
-        }else{
-            const {idUser} = authData.user[0]
-            
-            req.getConnection((err, conn) => {
-                if (err) return res.json(err)
-                conn.query('SELECT idGif FROM favorites where FK_idUser = ?', [idUser], (err, rows) => {
-                    if (err) return res.json(err)
-                    return res.status(200).json({
-                        data: rows
-                    })
-                })
-            })
-        }
-    })
-})
+controller.getFavGifs = async (req, res) => {
+  jwt.verify(req.token, "secretkey", async (error, authData) => {
+    if (error) {
+      return res.sendStatus(403);
+    } else {
+      const { idUser } = authData.user[0];
 
+      try {
+        const db = req.db;
 
-const foundIsFav = (req, idGif, idUser) => {
-    return new Promise(resolve => {
-        req.getConnection((err, conn) => {
-            if (err) return err
+        const rows = await db
+          .select("idGif")
+          .from("favorites")
+          .where("FK_idUser", idUser);
 
-            conn.query('SELECT idfavorites FROM favorites where (FK_idUser = ? and idGif = ?)', [idUser, idGif], (err, rows) => {
-                if (err) return err
-                return resolve(rows.length)
-            })
-        })
-    })
-}
+        return res.status(200).json({
+          data: rows,
+        });
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+    }
+  });
+};
+
+const foundIsFav = async (db, idGif, idUser) => {
+  try {
+    const rows = await db
+      .select("idfavorites")
+      .from("favorites")
+      .where("FK_idUser", idUser)
+      .where("idGif", idGif);
+
+    return rows.length;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
 
 module.exports = controller;
